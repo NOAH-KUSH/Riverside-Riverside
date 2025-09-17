@@ -1,0 +1,224 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Demo</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <div class="topbar">
+    <nav class="nav" id="mainNav">
+      <button data-key="home" class="nav-btn active">HOME</button>
+      <button data-key="notices" class="nav-btn">Notices</button>
+      <button data-key="biblestudy" class="nav-btn">Bible<br/>Study</button>
+      <button data-key="connect" class="nav-btn">Connect</button>
+      <button data-key="settings" class="nav-btn">Settings</button>
+    </nav>
+  </div>
+
+  <div class="container">
+
+    <!-- Main dynamic content area -->
+    <div id="contentArea" style="flex:1;">
+      <p id="homeText">Home data coming soon ...</p>
+    </div>
+
+    <!-- Right settings panel -->
+    <aside class="settings" id="settingsPanel">
+      <h3>SETTINGS</h3>
+      <div class="row">
+        <div class="label">Change Font</div>
+        <select id="fontSelect" class="font-select">
+          <option value="Calibri, Arial, sans-serif">Calibri ( Body )</option>
+          <option value="Arial, Helvetica, sans-serif">Arial</option>
+          <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+          <option value="'Segoe UI', Tahoma, Geneva, sans-serif">Segoe UI</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="label">Change Theme</div>
+        <div style="display:flex;gap:8px">
+          <button class="small-btn" id="lightBtn">Light mode</button>
+          <button class="small-btn" id="darkBtn">Dark mode</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="label">Change Language</div>
+        <div style="display:flex;gap:8px">
+          <button class="small-btn active" id="langEn">English</button>
+          <button class="small-btn" id="langSw">Swahili</button>
+        </div>
+      </div>
+      <div class="section-title">Others</div>
+      <div class="row">
+        <div class="label">About App</div>
+        <div class="muted">v1 — Prototype</div>
+      </div>
+      <div class="row">
+        <div class="label">Show storage usage</div>
+        <button class="small-btn" id="showStorageBtn">Show</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    const state = {
+      font: localStorage.getItem('ui.font') || 'Calibri, Arial, sans-serif',
+      theme: localStorage.getItem('ui.theme') || 'light',
+      lang: localStorage.getItem('ui.lang') || 'en',
+      activeNav: localStorage.getItem('ui.activeNav') || 'home'
+    }
+
+    const mainNav = document.getElementById('mainNav')
+    const contentArea = document.getElementById('contentArea')
+    const fontSelect = document.getElementById('fontSelect')
+    const lightBtn = document.getElementById('lightBtn')
+    const darkBtn = document.getElementById('darkBtn')
+    const langEn = document.getElementById('langEn')
+    const langSw = document.getElementById('langSw')
+    const settingsPanel = document.getElementById('settingsPanel')
+    const showStorageBtn = document.getElementById('showStorageBtn')
+
+    const T = {
+      en: { home: 'Home data coming soon ...', save: 'SAVE' },
+      sw: { home: 'Taarifa za nyumbani zitakuja hivi karibuni ...', save: 'HIFADHI' }
+    }
+
+    function applySettings(){
+      document.body.style.fontFamily = state.font
+      document.documentElement.setAttribute('data-theme', state.theme === 'dark' ? 'dark' : 'light')
+      fontSelect.value = state.font
+      lightBtn.classList.toggle('active', state.theme==='light')
+      darkBtn.classList.toggle('active', state.theme==='dark')
+      langEn.classList.toggle('active', state.lang==='en')
+      langSw.classList.toggle('active', state.lang==='sw')
+      setActiveNav(state.activeNav)
+    }
+
+  function setActiveNav(key){
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.key===key)
+  })
+  state.activeNav = key
+
+  // Reset content
+  contentArea.innerHTML = ''
+  settingsPanel.classList.remove('active')
+
+  if(key==='home'){
+    contentArea.innerHTML = `<p id="homeText">${T[state.lang].home}</p>`
+  } else if(key==='notices'){
+    contentArea.innerHTML = `<p class="muted">No notices yet</p>`
+  } else if(key==='biblestudy'){
+    contentArea.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`
+  } else if(key==='connect'){
+    contentArea.innerHTML = `<p class="muted">Connect with the community</p>`
+  } else if(key==='settings'){
+    // Show preview frame + save inside content area
+    contentArea.innerHTML = `
+      <div id="previewWrapper">
+        <div class="preview-frame" id="previewFrame">
+          <div class="preview-inner" id="miniApp">
+            <div class="topbar">
+              <nav class="nav" id="miniNav">
+                <button class="nav-btn active" data-mini="home">HOME</button>
+                <button class="nav-btn" data-mini="notices">Notices</button>
+                <button class="nav-btn" data-mini="biblestudy">Bible<br/>Study</button>
+                <button class="nav-btn" data-mini="connect">Connect</button>
+                <button class="nav-btn" data-mini="settings">Settings</button>
+              </nav>
+            </div>
+            <div class="content" id="miniContent">
+              <p>${T[state.lang].home}</p>
+            </div>
+          </div>
+          <div class="save-row">
+            <button id="saveBtn" class="btn">${T[state.lang].save}</button>
+          </div>
+        </div>
+        <div class="save-row">
+          <button id="togglePreviewBtn" class="btn">Hide Preview</button>
+        </div>
+      </div>
+    `
+    settingsPanel.classList.add('active')
+
+    // Mini app nav logic
+    const miniNav = document.getElementById('miniNav')
+    const miniContent = document.getElementById('miniContent')
+    miniNav.querySelectorAll('.nav-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        miniNav.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
+        btn.classList.add('active')
+        const section = btn.dataset.mini
+        if(section==='home'){
+          miniContent.innerHTML = `<p>${T[state.lang].home}</p>`
+        } else if(section==='notices'){
+          miniContent.innerHTML = `<p class="muted">No notices yet</p>`
+        } else if(section==='biblestudy'){
+          miniContent.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`
+        } else if(section==='connect'){
+          miniContent.innerHTML = `<p class="muted">Connect with the community</p>`
+        } else if(section==='settings'){
+          miniContent.innerHTML = `<p class="muted">Settings preview only</p>`
+        }
+      })
+    })
+
+    // Toggle preview visibility
+    const previewFrame = document.getElementById('previewFrame')
+    const toggleBtn = document.getElementById('togglePreviewBtn')
+    toggleBtn.addEventListener('click', ()=>{
+      if(previewFrame.style.display==='none'){
+        previewFrame.style.display='flex'
+        toggleBtn.textContent = 'Hide Preview'
+      } else {
+        previewFrame.style.display='none'
+        toggleBtn.textContent = 'Show Preview'
+      }
+    })
+
+    // Attach save handler
+    document.getElementById('saveBtn').addEventListener('click', ()=>{
+      localStorage.setItem('ui.font', state.font)
+      localStorage.setItem('ui.theme', state.theme)
+      localStorage.setItem('ui.lang', state.lang)
+      localStorage.setItem('ui.activeNav', state.activeNav)
+      const btn = document.getElementById('saveBtn')
+      btn.textContent='Saved'
+      setTimeout(()=> btn.textContent=T[state.lang].save, 900)
+    })
+  }
+}
+
+    function attachNavHandlers(root){
+      root.querySelectorAll('.nav-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          setActiveNav(btn.dataset.key)
+          localStorage.setItem('ui.activeNav', state.activeNav)
+        })
+      })
+    }
+
+    attachNavHandlers(mainNav)
+
+    fontSelect.addEventListener('change', e=>{ state.font=e.target.value; applySettings() })
+    lightBtn.addEventListener('click', ()=>{ state.theme='light'; applySettings() })
+    darkBtn.addEventListener('click', ()=>{ state.theme='dark'; applySettings() })
+    langEn.addEventListener('click', ()=>{ state.lang='en'; applySettings() })
+    langSw.addEventListener('click', ()=>{ state.lang='sw'; applySettings() })
+
+    showStorageBtn.addEventListener('click', ()=>{
+      let total=0
+      for(let k in localStorage){ if(localStorage.hasOwnProperty(k)) total += (localStorage[k].length+k.length)*2 }
+      alert('Estimated localStorage usage: '+Math.round(total/1024)+' KB')
+    })
+
+    applySettings()
+  </script>
+   <script src="app.js"></script>
+   </body>
+</html>
