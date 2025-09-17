@@ -5,5 +5,12 @@
   "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#317EFB",
-  "icons": []
+  "icons": [
+    {
+      "src": "maskable_icon_x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
