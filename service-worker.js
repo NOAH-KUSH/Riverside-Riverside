@@ -1,37 +1,36 @@
-const CACHE_NAME = "pwa-demo-v2"; // bump version when you update
-const ASSETS = [
-  "/",
-  "/index.html",
-  "/style.css",
-  "/app.js",
-  "/manifest.json"
-];
-
-// Install: cache files
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
-  console.log("Service Worker installed and assets cached");
-  self.skipWaiting(); // 👉 activate new SW immediately
-});
-
-// Activate: remove old caches
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
-    )
-  );
-  console.log("Service Worker activated, old caches cleared");
-  self.clients.claim(); // 👉 start controlling all open pages
-});
-
-// Fetch: serve cached files first, then network
+// Fetch: Cache-first with network fallback + runtime caching
 self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) {
+        return cachedResponse; // ✅ Serve from cache if available
+      }
+
+      // Otherwise, try network
+      return fetch(event.request).then(networkResponse => {
+        // ✅ Cache successful network responses for next time
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        // 🔴 If offline and not cached, provide fallback
+        if (event.request.destination === "document") {
+          return caches.match("/index.html"); // fallback to app shell
+        }
+        if (event.request.destination === "image") {
+          return new Response(
+            "<svg xmlns='http://www.w3.org/2000/svg' width='200' height='150'>" +
+            "<rect width='100%' height='100%' fill='lightgray'/>" +
+            "<text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='black'>Offline</text></svg>",
+            { headers: { "Content-Type": "image/svg+xml" } }
+          );
+        }
+        return new Response("Offline content not available", { status: 503, statusText: "Service Unavailable" });
+      });
     })
   );
 });
