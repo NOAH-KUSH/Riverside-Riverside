@@ -110,8 +110,15 @@
   contentArea.innerHTML = ''
   settingsPanel.classList.remove('active')
 
-  if(key==='home'){
-    contentArea.innerHTML = `<p id="homeText">${T[state.lang].home}</p>`
+ if (section === 'home') {
+    miniContent.innerHTML = `
+        <div class="home-section">
+            <img src="path/to/your/image.jpg" alt="Welcome Image" class="home-img" />
+            <p>${T[state.lang].home}</p>
+        </div>
+    `;
+}
+
   } else if(key==='notices'){
     contentArea.innerHTML = `<p class="muted">Wednesday  miracle service from 5:30pm to 6:30pm</p>`
   } else if(key==='biblestudy'){
