@@ -2,6 +2,7 @@
    - CacheStorage for static files & media
    - IndexedDB for API (JSON) responses + pins for media
    - cache-first for media, network-first for navigation/API with offline fallbacks
+   - Range support for cached full video files (returns 206 slices)
 */
 
 const CACHE_NAME = "pwa-demo-v4";
@@ -167,7 +168,118 @@ function isVideoRequest(req, url) {
   return req.destination === "video" || /\.(mp4|webm|ogg|m3u8)$/i.test(url.pathname);
 }
 
-// FETCH: main routing
+/* --------------------------
+   Message handler (pin / unpin / delete)
+   - page can postMessage({action:'pin', url})
+   - page can postMessage({action:'unpin', url})
+   - page can postMessage({action:'delete', url})  // optional immediate delete from cache
+-----------------------------*/
+self.addEventListener('message', (event) => {
+  const msg = event.data || {};
+  if (!msg || !msg.action) return;
+
+  if (msg.action === 'pin' && msg.url) {
+    event.waitUntil((async () => {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        // check if we already have a full cached copy
+        let existing = await cache.match(msg.url) || await cache.match(new Request(msg.url));
+        if (!existing) {
+          // fetch full resource without Range (ensure full 200 when possible)
+          try {
+            const net = await fetch(msg.url, { mode: 'cors' });
+            if (net && net.ok && net.status === 200) {
+              await cache.put(msg.url, net.clone());
+            } else {
+              // if server returns 206 for a normal fetch, we do not cache partial
+              console.warn('Pin fetch returned non-200, skipping cache for', msg.url, net && net.status);
+            }
+          } catch (e) {
+            console.warn('Pin fetch failed', e);
+          }
+        }
+        await idbPut(PIN_STORE, { url: msg.url, pinned: true, timestamp: Date.now() });
+        const pinnedKeys = (await idbGetAllKeys(PIN_STORE)) || [];
+        await trimCache(CACHE_NAME, 200, new Set(pinnedKeys));
+      } catch (err) {
+        console.warn('Pin failed', err);
+      }
+    })());
+    return;
+  }
+
+  if (msg.action === 'unpin' && msg.url) {
+    event.waitUntil((async () => {
+      try {
+        await idbDelete(PIN_STORE, msg.url);
+        // do not immediately delete from cache here; trimming will remove it later unless you want immediate removal
+      } catch (err) {
+        console.warn('Unpin failed', err);
+      }
+    })());
+    return;
+  }
+
+  if (msg.action === 'delete' && msg.url) {
+    event.waitUntil((async () => {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.delete(msg.url);
+        await idbDelete(PIN_STORE, msg.url);
+      } catch (err) {
+        console.warn('Delete cached resource failed', err);
+      }
+    })());
+    return;
+  }
+});
+
+/* --------------------------
+   Helper: serve byte range from a full Response
+   - NOTE: this loads the response into memory via arrayBuffer().
+     For very large files you may want a streaming approach.
+-----------------------------*/
+async function serveRangeFromFullResponse(fullResponse, request) {
+  // If no range request, return the full cloned response
+  const rangeHeader = request.headers.get('range');
+  if (!rangeHeader) {
+    return fullResponse.clone();
+  }
+
+  // parse the range header "bytes=start-end"
+  const matches = /bytes=(\d+)-(\d+)?/.exec(rangeHeader);
+  if (!matches) {
+    return new Response(null, { status: 416 });
+  }
+
+  const start = Number(matches[1]);
+  const end = matches[2] ? Number(matches[2]) : undefined;
+
+  // pull bytes from full response (arrayBuffer)
+  const buf = await fullResponse.clone().arrayBuffer();
+  const size = buf.byteLength;
+  const realEnd = (typeof end === 'number' && end < size) ? end : size - 1;
+
+  if (start >= size || start > realEnd) {
+    return new Response(null, {
+      status: 416,
+      headers: { 'Content-Range': `bytes */${size}` }
+    });
+  }
+
+  const chunk = buf.slice(start, realEnd + 1);
+  const headers = new Headers();
+  headers.set('Content-Range', `bytes ${start}-${realEnd}/${size}`);
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Content-Length', String(chunk.byteLength));
+  headers.set('Content-Type', fullResponse.headers.get('Content-Type') || 'video/mp4');
+
+  return new Response(chunk, { status: 206, headers });
+}
+
+/* --------------------------
+   FETCH: main routing
+-----------------------------*/
 self.addEventListener("fetch", event => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -179,7 +291,7 @@ self.addEventListener("fetch", event => {
     if (req.mode === "navigate" || req.destination === "document") {
       try {
         const netResp = await fetch(req);
-        // update cache copy for navigation requests
+        // update cache copy for navigation requests (cache the index)
         const cache = await caches.open(CACHE_NAME);
         cache.put(req, netResp.clone()).catch(() => {});
         return netResp;
@@ -193,47 +305,70 @@ self.addEventListener("fetch", event => {
       }
     }
 
-    // 2) Video requests -> cache-first, network fallback; mark as pinned in IDB
+    // 2) Video requests -> Range-aware, cache-first; network fallback; mark as pinned in IDB when appropriate
     if (isVideoRequest(req, url)) {
       const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(req);
+
+      // Try to find a cached full response (lookup both Request and url)
+      let cached = await cache.match(req) || await cache.match(req.url);
+
       if (cached) {
-        // update in background (don't block returning cached video)
+        // Serve requested range or full from cached full copy
+        // Start a background refresh to update the cached copy if online
         event.waitUntil((async () => {
           try {
+            // Fetch without special headers to get full resource (server may return 200)
             const net = await fetch(req);
-            if (net && net.ok) {
-              await cache.put(req, net.clone());
+            if (net && net.ok && net.status === 200) {
+              await cache.put(req.url, net.clone());
               await idbPut(PIN_STORE, { url: req.url, pinned: true, timestamp: Date.now() });
             }
           } catch (e) { /* ignore background update errors */ }
         })());
-        return cached;
+
+        // return cached with range support
+        return serveRangeFromFullResponse(cached, req);
       }
 
-      // not cached -> try network and save & pin
+      // Not cached -> try network
       try {
         const netResp = await fetch(req);
-        if (netResp && netResp.ok) {
-          event.waitUntil((async () => {
-            try {
-              await cache.put(req, netResp.clone());
-              await idbPut(PIN_STORE, { url: req.url, pinned: true, timestamp: Date.now() });
-              // keep cache trimmed but exclude pinned entries
-              const pinnedKeys = (await idbGetAllKeys(PIN_STORE)) || [];
-              const exclude = new Set(pinnedKeys);
-              await trimCache(CACHE_NAME, 200, exclude); // tweak max items as desired
-            } catch (e) { /* ignore */ }
-          })());
+        if (netResp && (netResp.status === 206)) {
+          // server returned a partial response for this Range request.
+          // Do not cache the partial response (we need full copy).
           return netResp;
         }
+
+        if (netResp && netResp.ok && netResp.status === 200) {
+          // We got a full response from network.
+          // Cache it, mark pinned, then if client requested a range, serve a 206 slice.
+          event.waitUntil((async () => {
+            try {
+              await cache.put(req.url, netResp.clone());
+              await idbPut(PIN_STORE, { url: req.url, pinned: true, timestamp: Date.now() });
+              const pinnedKeys = (await idbGetAllKeys(PIN_STORE)) || [];
+              const exclude = new Set(pinnedKeys);
+              await trimCache(CACHE_NAME, 200, exclude);
+            } catch (e) { /* ignore */ }
+          })());
+
+          // If request is a Range request, slice and return 206; otherwise return full
+          if (req.headers.get('range')) {
+            return serveRangeFromFullResponse(netResp, req);
+          }
+          return netResp;
+        }
+
+        // other network status: try to serve cache (unlikely at this point), otherwise fail
       } catch (e) {
-        // network failed -> serve cache if available
-        const cachedAgain = await cache.match(req);
-        if (cachedAgain) return cachedAgain;
-        // no video available
+        // network failed -> try to serve from cache if any (in case of race)
+        const cachedAgain = await cache.match(req) || await cache.match(req.url);
+        if (cachedAgain) return serveRangeFromFullResponse(cachedAgain, req);
         return new Response("", { status: 503 });
       }
+
+      // fallback no video
+      return new Response("", { status: 503 });
     }
 
     // 3) Static assets -> cache-first with background update (scripts/styles/images)
