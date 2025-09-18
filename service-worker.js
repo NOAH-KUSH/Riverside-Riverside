@@ -16,7 +16,8 @@ const CORE_ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./images/riverside-logo.png",
-   "./images/church-service.jpg" 
+  "./images/church-service.jpg"
+ 
 ];
 
 // Utility: trim a cache to `maxItems` by deleting oldest entries
