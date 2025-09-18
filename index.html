@@ -111,15 +111,22 @@ function renderSection(key){
   contentArea.innerHTML = '';
   settingsPanel.classList.remove('active');
 
-  if (key === 'home') {
-    contentArea.innerHTML = `
-      <div class="home-section">
-        <!-- use absolute path to be safer with SW -->
-       <img src="./church-service.jpg" alt="Home Image" class="home-img" />
-        <p id="homeText">${T[state.lang].home}</p>
-      </div>
-    `;
-  } else if (key === 'notices') {
+ if (section === 'home') {
+  miniContent.innerHTML = `
+    <div class="home-section">
+      <!-- Image -->
+      <img src="/church-service.jpg" alt="Welcome Image" class="home-img" />
+
+      <!-- Video -->
+      <video class="home-video" controls width="100%">
+        <source src="/intro-video.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      <p>${T[state.lang].home}</p>
+    </div>
+  `;
+ } else if (key === 'notices') {
     contentArea.innerHTML = `<p class="muted">Wednesday miracle service from 5:30pm to 6:30pm</p>`;
   } else if (key === 'biblestudy') {
     contentArea.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`;
