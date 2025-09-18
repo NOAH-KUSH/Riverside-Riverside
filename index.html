@@ -100,41 +100,28 @@ function applySettings(){
 }
 
 /* ------- Render section into contentArea ------- */
-function renderSection(key){
-  // update main nav active state
-  document.querySelectorAll('#mainNav .nav-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.key === key);
-  });
-  state.activeNav = key;
-
-  // reset content area and hide settings preview
-  contentArea.innerHTML = '';
-  settingsPanel.classList.remove('active');
-
- if (section === 'home') {
-  miniContent.innerHTML = `
-    <div class="home-section">
-      <!-- Image -->
-      <img src="./church-service.jpg" alt="Welcome Image" class="home-img" />
-
-      <!-- Video -->
-      <video class="home-video" controls width="100%">
-        <source src="./first-video.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-
-      <p>${T[state.lang].home}</p>
-    </div>
-  `;
- } else if (key === 'notices') {
-    contentArea.innerHTML = `<p class="muted">Wednesday miracle service from 5:30pm to 6:30pm</p>`;
-  } else if (key === 'biblestudy') {
-    contentArea.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`;
-  } else if (key === 'connect') {
-    contentArea.innerHTML = `<p class="muted">Connect with the community</p>`;
-  } else if (key === 'settings') {
-    // create settings preview HTML and attach handlers after injecting
-    contentArea.innerHTML = `
+// 🔑 Reusable render function
+function renderSection(target, section) {
+  if (section === 'home') {
+    target.innerHTML = `
+      <div class="home-section">
+        <img src="./church-service.jpg" alt="Welcome Image" class="home-img" />
+        <video class="home-video" controls width="100%">
+          <source src="./first-video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <p>${T[state.lang].home}</p>
+      </div>
+    `;
+  } else if (section === 'notices') {
+    target.innerHTML = `<p class="muted">Wednesday miracle service from 5:30pm to 6:30pm</p>`;
+  } else if (section === 'biblestudy') {
+    target.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`;
+  } else if (section === 'connect') {
+    target.innerHTML = `<p class="muted">Connect with the community</p>`;
+  } else if (section === 'settings') {
+    // Instead of inline content, build preview + nav
+    target.innerHTML = `
       <div id="previewWrapper">
         <div class="preview-frame" id="previewFrame" style="display:flex;flex-direction:column;">
           <div class="preview-inner" id="miniApp">
@@ -147,9 +134,7 @@ function renderSection(key){
                 <button class="nav-btn" data-mini="settings">Settings</button>
               </nav>
             </div>
-            <div class="content" id="miniContent">
-              <p>${T[state.lang].home}</p>
-            </div>
+            <div class="content" id="miniContent"></div>
           </div>
           <div class="save-row">
             <button id="saveBtn" class="btn">${T[state.lang].save}</button>
@@ -160,35 +145,21 @@ function renderSection(key){
         </div>
       </div>
     `;
-    settingsPanel.classList.add('active');
 
-    // Mini app nav logic (now correct variable usage and braces)
+    // Hook mini nav to reuse renderSection
     const miniNav = document.getElementById('miniNav');
     const miniContent = document.getElementById('miniContent');
+    renderSection(miniContent, 'home'); // default mini view
 
     miniNav.querySelectorAll('.nav-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         miniNav.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
-        const section = btn.dataset.mini;
-        if (section === 'home') {
-          miniContent.innerHTML = `
-            <div class="home-section">
-              <img src="/images/church-service.jpg" alt="Welcome Image" class="home-img" />
-              <p>${T[state.lang].home}</p>
-            </div>
-          `;
-        } else if (section === 'notices') {
-          miniContent.innerHTML = `<p class="muted">No notices yet</p>`;
-        } else if (section === 'biblestudy') {
-          miniContent.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`;
-        } else if (section === 'connect') {
-          miniContent.innerHTML = `<p class="muted">Connect with the community</p>`;
-        } else if (section === 'settings') {
-          miniContent.innerHTML = `<p class="muted">Settings preview only</p>`;
-        }
+        renderSection(miniContent, btn.dataset.mini);
       });
     });
+  }
+}
 
     // Toggle preview visibility
     const previewFrame = document.getElementById('previewFrame');
