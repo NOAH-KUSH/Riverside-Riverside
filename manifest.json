@@ -1,6 +1,6 @@
 {
-  "name": "Dc Riverside",
-  "short_name": "DcRiverside",
+  "name": "PWA Demo",
+  "short_name": "PWADemo",
   "start_url": "index.html",
   "display": "fullscreen",
   "background_color": "#ffffff",
