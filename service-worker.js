@@ -11,8 +11,8 @@ const CORE_ASSETS = [
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
+  "./maskable_icon_x192.png",
+  "./maskable_icon_x512.png",
   "./images/riverside-logo.png",
   "./church-service.jpg",
   "./first-video.mp4" // you can remove large media from CORE_ASSETS if you don't want to prefetch
