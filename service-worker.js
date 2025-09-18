@@ -5,8 +5,8 @@
    - runtime caching for dynamic requests, with cache size limit
 */
 
-const CACHE_NAME = "pwa-demo-v4";        // bump this when you release breaking changes
-const RUNTIME = "pwa-runtime-v1";
+const CACHE_NAME = "dc-demo-v4";        // bump this when you release breaking changes
+const RUNTIME = "dc-runtime-v1";
 const CORE_ASSETS = [
   "./",             // root - important for SPA-style apps
   "./index.html",
