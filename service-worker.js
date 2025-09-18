@@ -16,7 +16,7 @@ const CORE_ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./images/riverside-logo.png",
-  "./images/church-service.jpg"
+   "./church-service.jpg" 
  
 ];
 
