@@ -106,5 +106,15 @@
   transform: scale(1.01);
   transition: all 0.3s ease;
 }
-
+.video-block {
+  margin-bottom: 2rem; /* space between videos */
+  text-align: center;  /* center caption under video */
+}
+.video-caption {
+  margin-top: 0.6rem;   /* little space above caption */
+  font-size: 1rem;      /* adjust caption size */
+  font-weight: 500;     /* medium bold */
+  color: #444;          /* dark grey text */
+  font-style: italic;   /* optional: makes it look softer */
+}
 
