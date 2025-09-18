@@ -23,9 +23,13 @@
   <div class="container">
 
     <!-- Main dynamic content area -->
-    <div id="contentArea" style="flex:1;">
-      <p id="homeText">Home data coming soon  ...</p>
-    </div>
+   <div id="contentArea" style="flex:1;">
+  <div class="home-section">
+    <img src="./images/riverside-logo.png" alt="Welcome Image" class="home-img" />
+    <p id="homeText">Home data coming soon  ...</p>
+  </div>
+</div>
+
 
     <!-- Right settings panel -->
     <aside class="settings" id="settingsPanel">
@@ -110,15 +114,8 @@
   contentArea.innerHTML = ''
   settingsPanel.classList.remove('active')
 
- if (section === 'home') {
-    miniContent.innerHTML = `
-        <div class="home-section">
-            <img src="CHURCH SERVICE.jpg" alt="Welcome Image" class="home-img" />
-            <p>${T[state.lang].home}</p>
-        </div>
-    `;
-}
-
+ if(section==='home'){
+          miniContent.innerHTML = `<p>${T[state.lang].home}</p>` 
   } else if(key==='notices'){
     contentArea.innerHTML = `<p class="muted">Wednesday  miracle service from 5:30pm to 6:30pm</p>`
   } else if(key==='biblestudy'){
