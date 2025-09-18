@@ -156,8 +156,15 @@
         miniNav.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
         btn.classList.add('active')
         const section = btn.dataset.mini
-        if(section==='home'){
-          miniContent.innerHTML = `<p>${T[state.lang].home}</p>`
+       if (section === 'home') {
+    miniContent.innerHTML = `
+        <div class="home-section">
+            <img src="path/to/your/image.jpg" alt="Welcome Image" class="home-img" />
+            <p>${T[state.lang].home}</p>
+        </div>
+    `;
+}
+
         } else if(section==='notices'){
           miniContent.innerHTML = `<p class="muted">No notices yet</p>`
         } else if(section==='biblestudy'){
