@@ -88,5 +88,23 @@
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+/* 🎥 Home Video Styling */
+.home-video {
+  display: block;
+  width: 100%;          /* full width inside container */
+  max-width: 700px;     /* don’t stretch too large on big screens */
+  height: auto;         /* keep aspect ratio */
+  margin: 1rem auto;    /* center horizontally with spacing */
+  border-radius: 12px;  /* rounded corners */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* soft shadow */
+  background: #000;     /* fallback background */
+}
+
+/* Optional: Add hover effect for a subtle lift */
+.home-video:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  transform: scale(1.01);
+  transition: all 0.3s ease;
+}
 
 
