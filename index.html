@@ -70,70 +70,72 @@
 
   </div>
 
-  <script>
-    const state = {
-      font: localStorage.getItem('ui.font') || 'Calibri, Arial, sans-serif',
-      theme: localStorage.getItem('ui.theme') || 'light',
-      lang: localStorage.getItem('ui.lang') || 'en',
-      activeNav: localStorage.getItem('ui.activeNav') || 'home'
-    }
+ <script>
+/* ------- State & DOM refs ------- */
+const state = {
+  font: localStorage.getItem('ui.font') || 'Calibri, Arial, sans-serif',
+  theme: localStorage.getItem('ui.theme') || 'light',
+  lang: localStorage.getItem('ui.lang') || 'en',
+  activeNav: localStorage.getItem('ui.activeNav') || 'home'
+};
 
-    const mainNav = document.getElementById('mainNav')
-    const contentArea = document.getElementById('contentArea')
-    const fontSelect = document.getElementById('fontSelect')
-    const lightBtn = document.getElementById('lightBtn')
-    const darkBtn = document.getElementById('darkBtn')
-    const langEn = document.getElementById('langEn')
-    const langSw = document.getElementById('langSw')
-    const settingsPanel = document.getElementById('settingsPanel')
-    const showStorageBtn = document.getElementById('showStorageBtn')
+const mainNav = document.getElementById('mainNav');
+const contentArea = document.getElementById('contentArea');
+const fontSelect = document.getElementById('fontSelect');
+const lightBtn = document.getElementById('lightBtn');
+const darkBtn = document.getElementById('darkBtn');
+const langEn = document.getElementById('langEn');
+const langSw = document.getElementById('langSw');
+const settingsPanel = document.getElementById('settingsPanel');
+const showStorageBtn = document.getElementById('showStorageBtn');
 
-    const T = {
-      en: { home: 'Home data coming soon  ...', save: 'SAVE' },
-      sw: { home: 'Taarifa za nyumbani zitakuja hivi karibuni  ...', save: 'HIFADHI' }
-    }
+const T = {
+  en: { home: 'Home data coming soon  ...', save: 'SAVE' },
+  sw: { home: 'Taarifa za nyumbani zitakuja hivi karibuni  ...', save: 'HIFADHI' }
+};
 
-    function applySettings(){
-      document.body.style.fontFamily = state.font
-      document.documentElement.setAttribute('data-theme', state.theme === 'dark' ? 'dark' : 'light')
-      fontSelect.value = state.font
-      lightBtn.classList.toggle('active', state.theme==='light')
-      darkBtn.classList.toggle('active', state.theme==='dark')
-      langEn.classList.toggle('active', state.lang==='en')
-      langSw.classList.toggle('active', state.lang==='sw')
-      setActiveNav(state.activeNav)
-    }
-
-  function setActiveNav(key){
-  document.querySelectorAll('.nav-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.key===key)
-  })
-  state.activeNav = key
-
-  // Reset content
-  contentArea.innerHTML = ''
-  settingsPanel.classList.remove('active')
-
-if (section === 'home') {
-    miniContent.innerHTML = `
-        <div class="home-section">
-            <p>${T[state.lang].home}</p>
-            <img src="./images/church-service.jpg" alt="Home Image" class="home-img" />
-        </div>
-    `;
+/* ------- Apply UI prefs ------- */
+function applySettings(){
+  document.body.style.fontFamily = state.font;
+  document.documentElement.setAttribute('data-theme', state.theme === 'dark' ? 'dark' : 'light');
+  fontSelect.value = state.font;
+  lightBtn.classList.toggle('active', state.theme==='light');
+  darkBtn.classList.toggle('active', state.theme==='dark');
+  langEn.classList.toggle('active', state.lang==='en');
+  langSw.classList.toggle('active', state.lang==='sw');
 }
 
-  } else if(key==='notices'){
-    contentArea.innerHTML = `<p class="muted">Wednesday  miracle service from 5:30pm to 6:30pm</p>`
-  } else if(key==='biblestudy'){
-    contentArea.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`
-  } else if(key==='connect'){
-    contentArea.innerHTML = `<p class="muted">Connect with the community</p>`
-  } else if(key==='settings'){
-    // Show preview frame + save inside content area
+/* ------- Render section into contentArea ------- */
+function renderSection(key){
+  // update main nav active state
+  document.querySelectorAll('#mainNav .nav-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.key === key);
+  });
+  state.activeNav = key;
+
+  // reset content area and hide settings preview
+  contentArea.innerHTML = '';
+  settingsPanel.classList.remove('active');
+
+  if (key === 'home') {
+    contentArea.innerHTML = `
+      <div class="home-section">
+        <!-- use absolute path to be safer with SW -->
+        <img src="/images/church-service.jpg" alt="Home Image" class="home-img" />
+        <p id="homeText">${T[state.lang].home}</p>
+      </div>
+    `;
+  } else if (key === 'notices') {
+    contentArea.innerHTML = `<p class="muted">Wednesday miracle service from 5:30pm to 6:30pm</p>`;
+  } else if (key === 'biblestudy') {
+    contentArea.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`;
+  } else if (key === 'connect') {
+    contentArea.innerHTML = `<p class="muted">Connect with the community</p>`;
+  } else if (key === 'settings') {
+    // create settings preview HTML and attach handlers after injecting
     contentArea.innerHTML = `
       <div id="previewWrapper">
-        <div class="preview-frame" id="previewFrame">
+        <div class="preview-frame" id="previewFrame" style="display:flex;flex-direction:column;">
           <div class="preview-inner" id="miniApp">
             <div class="topbar">
               <nav class="nav" id="miniNav">
@@ -156,89 +158,94 @@ if (section === 'home') {
           <button id="togglePreviewBtn" class="btn">Hide Preview</button>
         </div>
       </div>
-    `
-    settingsPanel.classList.add('active')
+    `;
+    settingsPanel.classList.add('active');
 
-    // Mini app nav logic
-    const miniNav = document.getElementById('miniNav')
-    const miniContent = document.getElementById('miniContent')
+    // Mini app nav logic (now correct variable usage and braces)
+    const miniNav = document.getElementById('miniNav');
+    const miniContent = document.getElementById('miniContent');
+
     miniNav.querySelectorAll('.nav-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        miniNav.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
-        btn.classList.add('active')
-        const section = btn.dataset.mini
-       if (section === 'home') {
-    miniContent.innerHTML = `
-        <div class="home-section">
-            <img src="path/to/your/image.jpg" alt="Welcome Image" class="home-img" />
-            <p>${T[state.lang].home}</p>
-        </div>
-    `;
-}
-
-        } else if(section==='notices'){
-          miniContent.innerHTML = `<p class="muted">No notices yet</p>`
-        } else if(section==='biblestudy'){
-          miniContent.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`
-        } else if(section==='connect'){
-          miniContent.innerHTML = `<p class="muted">Connect with the community</p>`
-        } else if(section==='settings'){
-          miniContent.innerHTML = `<p class="muted">Settings preview only</p>`
+        miniNav.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const section = btn.dataset.mini;
+        if (section === 'home') {
+          miniContent.innerHTML = `
+            <div class="home-section">
+              <img src="/images/church-service.jpg" alt="Welcome Image" class="home-img" />
+              <p>${T[state.lang].home}</p>
+            </div>
+          `;
+        } else if (section === 'notices') {
+          miniContent.innerHTML = `<p class="muted">No notices yet</p>`;
+        } else if (section === 'biblestudy') {
+          miniContent.innerHTML = `<strong>Bible Study</strong><p class="muted">Today's topic: —</p>`;
+        } else if (section === 'connect') {
+          miniContent.innerHTML = `<p class="muted">Connect with the community</p>`;
+        } else if (section === 'settings') {
+          miniContent.innerHTML = `<p class="muted">Settings preview only</p>`;
         }
-      })
-    })
+      });
+    });
 
     // Toggle preview visibility
-    const previewFrame = document.getElementById('previewFrame')
-    const toggleBtn = document.getElementById('togglePreviewBtn')
+    const previewFrame = document.getElementById('previewFrame');
+    const toggleBtn = document.getElementById('togglePreviewBtn');
     toggleBtn.addEventListener('click', ()=>{
-      if(previewFrame.style.display==='none'){
-        previewFrame.style.display='flex'
-        toggleBtn.textContent = 'Hide Preview'
+      if (previewFrame.style.display === 'none') {
+        previewFrame.style.display = 'flex';
+        toggleBtn.textContent = 'Hide Preview';
       } else {
-        previewFrame.style.display='none'
-        toggleBtn.textContent = 'Show Preview'
+        previewFrame.style.display = 'none';
+        toggleBtn.textContent = 'Show Preview';
       }
-    })
+    });
 
-    // Attach save handler
+    // Save handler
     document.getElementById('saveBtn').addEventListener('click', ()=>{
-      localStorage.setItem('ui.font', state.font)
-      localStorage.setItem('ui.theme', state.theme)
-      localStorage.setItem('ui.lang', state.lang)
-      localStorage.setItem('ui.activeNav', state.activeNav)
-      const btn = document.getElementById('saveBtn')
-      btn.textContent='Saved'
-      setTimeout(()=> btn.textContent=T[state.lang].save, 900)
-    })
+      localStorage.setItem('ui.font', state.font);
+      localStorage.setItem('ui.theme', state.theme);
+      localStorage.setItem('ui.lang', state.lang);
+      localStorage.setItem('ui.activeNav', state.activeNav);
+      const btn = document.getElementById('saveBtn');
+      btn.textContent = 'Saved';
+      setTimeout(()=> btn.textContent = T[state.lang].save, 900);
+    });
   }
 }
 
-    function attachNavHandlers(root){
-      root.querySelectorAll('.nav-btn').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          setActiveNav(btn.dataset.key)
-          localStorage.setItem('ui.activeNav', state.activeNav)
-        })
-      })
-    }
+/* ------- Attach handlers to a nav root ------- */
+function attachNavHandlers(root){
+  root.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      renderSection(btn.dataset.key);
+      localStorage.setItem('ui.activeNav', state.activeNav);
+    });
+  });
+}
 
-    attachNavHandlers(mainNav)
+/* ------- Wire up settings controls ------- */
+attachNavHandlers(mainNav);
 
-    fontSelect.addEventListener('change', e=>{ state.font=e.target.value; applySettings() })
-    lightBtn.addEventListener('click', ()=>{ state.theme='light'; applySettings() })
-    darkBtn.addEventListener('click', ()=>{ state.theme='dark'; applySettings() })
-    langEn.addEventListener('click', ()=>{ state.lang='en'; applySettings() })
-    langSw.addEventListener('click', ()=>{ state.lang='sw'; applySettings() })
+fontSelect.addEventListener('change', e=>{ state.font = e.target.value; applySettings(); });
+lightBtn.addEventListener('click', ()=>{ state.theme = 'light'; applySettings(); });
+darkBtn.addEventListener('click', ()=>{ state.theme = 'dark'; applySettings(); });
+langEn.addEventListener('click', ()=>{ state.lang = 'en'; applySettings(); });
+langSw.addEventListener('click', ()=>{ state.lang = 'sw'; applySettings(); });
 
-    showStorageBtn.addEventListener('click', ()=>{
-      let total=0
-      for(let k in localStorage){ if(localStorage.hasOwnProperty(k)) total += (localStorage[k].length+k.length)*2 }
-      alert('Estimated localStorage usage: '+Math.round(total/1024)+' KB')
-    })
+showStorageBtn.addEventListener('click', ()=>{
+  let total = 0;
+  for (let k in localStorage){
+    if (localStorage.hasOwnProperty(k)) total += (localStorage[k].length + k.length) * 2;
+  }
+  alert('Estimated localStorage usage: '+Math.round(total/1024)+' KB');
+});
 
-    applySettings()
-  </script>
+applySettings();
+renderSection(state.activeNav);
+</script>
+
    <script src="app.js"></script>
    </body>
 </html>
