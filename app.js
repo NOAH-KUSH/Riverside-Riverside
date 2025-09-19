@@ -219,7 +219,7 @@
       "position:fixed",
       "left:12px",
       "right:12px",
-      "bottom:18px",
+     "top:18px", 
       "padding:12px 14px",
       "background:#fff",
       "color:#000",
