@@ -215,23 +215,25 @@
 
     installBannerEl = document.createElement("div");
     installBannerEl.id = "pwa-install-banner";
-    installBannerEl.style.cssText = [
-      "position:fixed",
-      "left:12px",
-      "right:12px",
-     "top:18px", 
-      "padding:12px 14px",
-      "background:#fff",
-      "color:#000",
-      "border-radius:10px",
-      "box-shadow:0 8px 30px rgba(0,0,0,.18)",
-      "z-index:9999",
-      "display:flex",
-      "align-items:center",
-      "justify-content:space-between",
-      "gap:10px",
-      "font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial"
-    ].join(";");
+   installBannerEl.style.cssText = [
+  "position:fixed",
+  "top:50%",
+  "left:50%",
+  "transform:translate(-50%, -50%)", // shift back half of its width & height
+  "max-width:320px",   // optional: prevent it from stretching too wide
+  "width:90%",         // responsive width
+  "padding:12px 14px",
+  "background:#fff",
+  "color:#000",
+  "border-radius:10px",
+  "box-shadow:0 8px 30px rgba(0,0,0,.18)",
+  "z-index:9999",
+  "display:flex",
+  "align-items:center",
+  "justify-content:space-between",
+  "gap:10px",
+  "font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial"
+].join(";");
 
     const txt = document.createElement("div");
     txt.style.flex = "1 1 auto";
