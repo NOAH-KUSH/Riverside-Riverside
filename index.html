@@ -12,6 +12,7 @@
 
   <div class="topbar">
     <nav class="nav" id="mainNav">
+       <button id="installBtn" class="nav-btn" style="display:none;">Install</button>
       <button data-key="home" class="nav-btn active">HOME </button>
       <button data-key="notices" class="nav-btn">Notices</button>
       <button data-key="biblestudy" class="nav-btn">Bible<br/>Study</button>
@@ -321,6 +322,39 @@ document.addEventListener('DOMContentLoaded', () => {
   attachMainNav();
   // render initial main view
   renderSection(contentArea, state.activeNav || 'home');
+});
+  
+  let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  // Stop default mini-infobar
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Show our button
+  installBtn.style.display = "inline-block";
+});
+
+installBtn.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+
+  if (choice.outcome === "accepted") {
+    console.log("✅ User accepted install");
+    installBtn.style.display = "none";
+  } else {
+    console.log("❌ User dismissed install");
+  }
+
+  deferredPrompt = null;
+});
+
+// Hide button if already installed
+window.addEventListener("appinstalled", () => {
+  console.log("📲 App installed");
+  installBtn.style.display = "none";
 });
 </script>
 
